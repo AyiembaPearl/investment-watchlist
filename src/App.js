@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 const API_KEY = "jM7phybBv8vXqlP5eGlxSnS4Y11LMltf";
 
@@ -53,13 +55,21 @@ function App() {
     setNseStocks(updated);
   };
 
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(nseStocks);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "NSE Stocks");
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(new Blob([wbout], { type: "application/octet-stream" }), "NSE_Stocks.xlsx");
+  };
+
   const mmfReturn = (amount * mmfRate * 365) / (100 * 365);
   const tBillReturn = (amount * tBillRate * duration) / (100 * 365);
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
       <h1>📊 NSE Stock Watchlist (Manual)</h1>
-      <table border="1" cellPadding="8" style={{ width: "100%", marginBottom: "20px" }}>
+      <table border="1" cellPadding="8" style={{ width: "100%", marginBottom: "10px" }}>
         <thead style={{ backgroundColor: "#f0f0f0" }}>
           <tr>
             <th>Stock</th>
@@ -83,6 +93,7 @@ function App() {
           ))}
         </tbody>
       </table>
+      <button onClick={exportToExcel} style={{ marginBottom: "40px", padding: "8px 16px" }}>📤 Export to Excel</button>
 
       <h2>🌍 Global Stocks (Live Data via API)</h2>
       <p><strong>Last Fetched:</strong> {globalLastFetched || "-"}</p>
