@@ -1,28 +1,48 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-// Stock watchlist data
+// Your API key
+const API_KEY = "jM7phybBv8vXqlP5eGlxSnS4Y11LMltf";
+
 const initialStocks = [
-  { name: "Safaricom (SCOM)", sector: "Telco", price: "", range: "", yield: "", pe: "", notes: "" },
-  { name: "Equity Bank (EQTY)", sector: "Banking", price: "", range: "", yield: "", pe: "", notes: "" },
-  { name: "KCB Group", sector: "Banking", price: "", range: "", yield: "", pe: "", notes: "" },
-  { name: "EABL", sector: "Consumer Goods", price: "", range: "", yield: "", pe: "", notes: "" },
-  { name: "NSE ETF", sector: "Index Fund", price: "", range: "", yield: "", pe: "", notes: "" }
+  { symbol: "SCOM.L", name: "Safaricom (SCOM)", sector: "Telco", price: "", range: "", yield: "", pe: "", notes: "" },
+  { symbol: "", name: "Equity Bank (EQTY)", sector: "Banking", price: "", range: "", yield: "", pe: "", notes: "" },
+  { symbol: "", name: "KCB Group", sector: "Banking", price: "", range: "", yield: "", pe: "", notes: "" },
+  { symbol: "", name: "EABL", sector: "Consumer Goods", price: "", range: "", yield: "", pe: "", notes: "" },
+  { symbol: "", name: "NSE ETF", sector: "Index Fund", price: "", range: "", yield: "", pe: "", notes: "" }
 ];
 
 function App() {
   const [stocks, setStocks] = useState(initialStocks);
+  const [amount, setAmount] = useState(39000);
+  const [mmfRate, setMmfRate] = useState(13.45);
+  const [tBillRate, setTBillRate] = useState(16.3);
+  const [duration, setDuration] = useState(182);
+
+  useEffect(() => {
+    async function fetchStockData() {
+      try {
+        const res = await fetch(`https://financialmodelingprep.com/api/v3/quote/SCOM.L?apikey=${API_KEY}`);
+        const data = await res.json();
+        if (data && data[0]) {
+          const updatedStocks = [...stocks];
+          updatedStocks[0].price = data[0].price.toFixed(2);
+          updatedStocks[0].pe = data[0].pe ? data[0].pe.toFixed(2) : "-";
+          updatedStocks[0].yield = data[0].lastDiv ? `${data[0].lastDiv.toFixed(2)}%` : "-";
+          setStocks(updatedStocks);
+        }
+      } catch (error) {
+        console.error("Error fetching stock data:", error);
+      }
+    }
+
+    fetchStockData();
+  }, []);
 
   const handleChange = (index, field, value) => {
     const newStocks = [...stocks];
     newStocks[index][field] = value;
     setStocks(newStocks);
   };
-
-  // MMF vs Treasury calculator state
-  const [amount, setAmount] = useState(39000);
-  const [mmfRate, setMmfRate] = useState(13.45);
-  const [tBillRate, setTBillRate] = useState(16.3);
-  const [duration, setDuration] = useState(182); // in days
 
   const calcReturns = (principal, rate, days) => {
     return (principal * rate * days) / (100 * 365);
@@ -34,15 +54,14 @@ function App() {
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
       <h1 style={{ fontSize: "24px", marginBottom: "16px" }}>📈 Investment Watchlist</h1>
-      
       <table border="1" cellPadding="8" cellSpacing="0" style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ backgroundColor: "#f0f0f0" }}>
             <th>Stock</th>
             <th>Sector</th>
             <th>Price (KES)</th>
-            <th>52W Range</th>
-            <th>Div. Yield</th>
+            <th>52-Week Range</th>
+            <th>Dividend Yield</th>
             <th>P/E Ratio</th>
             <th>Notes</th>
           </tr>
@@ -63,7 +82,6 @@ function App() {
       </table>
 
       <h2 style={{ marginTop: "40px", fontSize: "20px" }}>💰 MMF vs Treasury Bill Calculator</h2>
-
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: "16px", maxWidth: "600px" }}>
         <label>
           Investment Amount (KES):
@@ -90,11 +108,8 @@ function App() {
         <p>📊 <strong>Projected MMF Return (1 year):</strong> KES {mmfReturn.toFixed(2)}</p>
         <p>📊 <strong>Projected T-Bill Return ({duration} days):</strong> KES {tBillReturn.toFixed(2)}</p>
         <p>
-          ✅ <strong>Better Option:</strong> {
-            tBillReturn > mmfReturn * (duration / 365)
-              ? "Treasury Bill"
-              : "MMF"
-          }
+          ✅ <strong>Better Option:</strong>{" "}
+          {tBillReturn > mmfReturn * (duration / 365) ? "Treasury Bill" : "MMF"}
         </p>
       </div>
     </div>
@@ -102,4 +117,3 @@ function App() {
 }
 
 export default App;
-
