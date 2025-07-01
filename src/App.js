@@ -3,11 +3,11 @@ import React, { useState, useEffect } from "react";
 const API_KEY = "jM7phybBv8vXqlP5eGlxSnS4Y11LMltf";
 
 const defaultNSEStocks = [
-  { name: "Safaricom", price: "", pe: "", yield: "", notes: "" },
-  { name: "Equity Bank", price: "", pe: "", yield: "", notes: "" },
-  { name: "KCB Group", price: "", pe: "", yield: "", notes: "" },
-  { name: "EABL", price: "", pe: "", yield: "", notes: "" },
-  { name: "NSE ETF", price: "", pe: "", yield: "", notes: "" }
+  { name: "Safaricom", price: "", pe: "", yield: "", notes: "", lastUpdated: "" },
+  { name: "Equity Bank", price: "", pe: "", yield: "", notes: "", lastUpdated: "" },
+  { name: "KCB Group", price: "", pe: "", yield: "", notes: "", lastUpdated: "" },
+  { name: "EABL", price: "", pe: "", yield: "", notes: "", lastUpdated: "" },
+  { name: "NSE ETF", price: "", pe: "", yield: "", notes: "", lastUpdated: "" }
 ];
 
 const globalStocks = ["AAPL", "VOO"];
@@ -18,27 +18,38 @@ function App() {
     return saved ? JSON.parse(saved) : defaultNSEStocks;
   });
 
+  const [globalData, setGlobalData] = useState([]);
+  const [globalLastFetched, setGlobalLastFetched] = useState("");
+
   const [amount, setAmount] = useState(39000);
   const [mmfRate, setMmfRate] = useState(13.45);
   const [tBillRate, setTBillRate] = useState(16.3);
   const [duration, setDuration] = useState(182);
-
-  const [globalData, setGlobalData] = useState([]);
 
   useEffect(() => {
     localStorage.setItem("nseStocks", JSON.stringify(nseStocks));
   }, [nseStocks]);
 
   useEffect(() => {
-    fetch(`https://financialmodelingprep.com/api/v3/quote/${globalStocks.join(",")}?apikey=${API_KEY}`)
-      .then((res) => res.json())
-      .then(setGlobalData)
-      .catch((err) => console.error("API fetch error:", err));
+    async function fetchGlobalData() {
+      try {
+        const res = await fetch(
+          `https://financialmodelingprep.com/api/v3/quote/${globalStocks.join(",")}?apikey=${API_KEY}`
+        );
+        const data = await res.json();
+        setGlobalData(data);
+        setGlobalLastFetched(new Date().toLocaleString());
+      } catch (err) {
+        console.error("API fetch error:", err);
+      }
+    }
+    fetchGlobalData();
   }, []);
 
   const updateNseStock = (index, field, value) => {
     const updated = [...nseStocks];
     updated[index][field] = value;
+    updated[index].lastUpdated = new Date().toLocaleString();
     setNseStocks(updated);
   };
 
@@ -48,7 +59,7 @@ function App() {
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
       <h1>📊 NSE Stock Watchlist (Manual)</h1>
-      <table border="1" cellPadding="8" style={{ width: "100%", marginBottom: "40px" }}>
+      <table border="1" cellPadding="8" style={{ width: "100%", marginBottom: "20px" }}>
         <thead style={{ backgroundColor: "#f0f0f0" }}>
           <tr>
             <th>Stock</th>
@@ -56,6 +67,7 @@ function App() {
             <th>P/E</th>
             <th>Yield (%)</th>
             <th>Notes</th>
+            <th>Last Updated</th>
           </tr>
         </thead>
         <tbody>
@@ -66,12 +78,14 @@ function App() {
               <td><input value={stock.pe} onChange={(e) => updateNseStock(index, "pe", e.target.value)} /></td>
               <td><input value={stock.yield} onChange={(e) => updateNseStock(index, "yield", e.target.value)} /></td>
               <td><input value={stock.notes} onChange={(e) => updateNseStock(index, "notes", e.target.value)} /></td>
+              <td>{stock.lastUpdated || "-"}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       <h2>🌍 Global Stocks (Live Data via API)</h2>
+      <p><strong>Last Fetched:</strong> {globalLastFetched || "-"}</p>
       <table border="1" cellPadding="8" style={{ width: "100%", marginBottom: "40px" }}>
         <thead style={{ backgroundColor: "#e0f7fa" }}>
           <tr>
